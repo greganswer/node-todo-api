@@ -27,6 +27,17 @@ app.post('/todos', (req, res) => {
   );
 });
 
+app.get('/todos', (req, res) => {
+  Todo.find().then(
+    todos => {
+      res.send({ todos });
+    },
+    e => {
+      res.status(400).send(e);
+    },
+  );
+});
+
 // Final
 
 app.get('*', (req, res) => res.send('404 - Not found'));
