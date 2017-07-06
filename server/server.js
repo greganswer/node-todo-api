@@ -14,6 +14,7 @@ app.use(bodyParser.json());
 const PORT = process.env.PORT || 3000;
 const ENV = process.env.NODE_ENV || 'development';
 const { mongoose } = require('./db/mongoose');
+const { authenticate } = require('./middleware/authenticate');
 const { Todo } = require('./models/todo');
 const { User } = require('./models/user');
 
@@ -111,7 +112,13 @@ app.post('/users', (req, res) => {
     .save()
     .then(() => user.generateAuthToken())
     .then(token => res.header('x-auth', token).send({ user }))
-    .catch(e => res.status(400).send(e));
+    .catch(e => res.status(400).send('Something went wrong'));
+});
+
+// GET /users/me
+
+app.get('/users/me', authenticate, (req, res) => {
+  res.send(req.user);
 });
 
 // Final
