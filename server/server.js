@@ -12,6 +12,7 @@ app.use(bodyParser.json());
 // Local
 
 const PORT = process.env.PORT || 3000;
+const ENV = process.env.NODE_ENV || 'development';
 const { mongoose } = require('./db/mongoose');
 const { Todo } = require('./models/todo');
 const { User } = require('./models/user');
@@ -21,27 +22,18 @@ const { User } = require('./models/user');
 app.post('/todos', (req, res) => {
   let todo = new Todo({ text: req.body.text });
 
-  todo.save().then(
-    doc => {
-      res.send(doc);
-    },
-    e => {
-      res.status(400).send(e);
-    },
-  );
+  todo
+    .save()
+    .then(todo => res.send(todo))
+    .catch(e => res.status(400).send('Something went wrong'));
 });
 
 // GET /todos
 
 app.get('/todos', (req, res) => {
-  Todo.find().then(
-    todos => {
-      res.send({ todos });
-    },
-    e => {
-      res.status(400).send(e);
-    },
-  );
+  Todo.find()
+    .then(todos => res.send({ todos }))
+    .catch(e => res.status(400).send('Something went wrong'));
 });
 
 // GET /todos/:id
@@ -109,14 +101,23 @@ app.patch('/todos/:id', (req, res) => {
     .catch(e => res.status(400).send('Something went wrong'));
 });
 
+// POST /users
+
+app.post('/users', (req, res) => {
+  let body = _.pick(req.body, ['email', 'password']);
+  let user = new User(body);
+
+  user
+    .save()
+    .then(() => user.generateAuthToken())
+    .then(token => res.header('x-auth', token).send({ user }))
+    .catch(e => res.status(400).send(e));
+});
+
 // Final
 
+let message = `Server is running on port ${PORT} in ${ENV}`;
 app.get('*', (req, res) => res.send('404 - Not found'));
-app.listen(PORT, () => {
-  console.log(
-    `Server is running on port ${PORT} in ${process.env.NODE_ENV ||
-      'development'}`,
-  );
-});
+app.listen(PORT, () => console.log(message));
 
 module.exports = { app };
