@@ -123,6 +123,18 @@ app.post('/users/login', (req, res) => {
     .catch(e => res.status(400).send());
 });
 
+// POST /users/me/token
+app.delete('/users/me/token', authenticate, (req, res) => {
+  req.user.removeToken(req.token).then(
+    () => {
+      res.status(200).send();
+    },
+    () => {
+      res.status(400).send();
+    },
+  );
+});
+
 // Final
 let message = `Server is running on port ${PORT} in ${ENV}`;
 app.get('*', (req, res) => res.send('404 - Not found'));
