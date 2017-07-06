@@ -55,9 +55,7 @@ describe('GET /todos', () => {
     request(app)
       .get('/todos')
       .expect(200)
-      .expect(res => {
-        expect(res.body.todos.length).toBe(2);
-      })
+      .expect(res => expect(res.body.todos.length).toBe(2))
       .end(done);
   });
 });
@@ -67,9 +65,7 @@ describe('GET /todos/:id', () => {
     request(app)
       .get(`/todos/${todos[0]._id.toHexString()}`)
       .expect(200)
-      .expect(res => {
-        expect(res.body.todo.text).toBe(todos[0].text);
-      })
+      .expect(res => expect(res.body.todo.text).toBe(todos[0].text))
       .end(done);
   });
 
@@ -91,9 +87,7 @@ describe('DELETE /todos/:id', () => {
     request(app)
       .delete(`/todos/${hexId}`)
       .expect(200)
-      .expect(res => {
-        expect(res.body.todo._id).toBe(hexId);
-      })
+      .expect(res => expect(res.body.todo._id).toBe(hexId))
       .end((err, res) => {
         if (err) {
           return done(err);
@@ -199,9 +193,7 @@ describe('GET /users/me', () => {
     request(app)
       .get('/users/me')
       .expect(401)
-      .expect(res => {
-        expect(res.body).toEqual({});
-      })
+      .expect(res => expect(res.body).toEqual({}))
       .end(done);
   });
 });
@@ -227,7 +219,6 @@ describe('POST /users', () => {
           .then(user => {
             expect(user).toExist();
             expect(user.password).toNotBe(data.password);
-
             done();
           })
           .catch(e => done(e));
@@ -239,9 +230,7 @@ describe('POST /users', () => {
       .post('/users')
       .send({ email: 'and', password: '12345' })
       .expect(400)
-      .expect(res => {
-        expect(res.body).toEqual({});
-      })
+      .expect(res => expect(res.body).toEqual({}))
       .end(done);
   });
 
@@ -250,9 +239,50 @@ describe('POST /users', () => {
       .post('/users')
       .send({ email: users[0].email, password: 'faldjskf' })
       .expect(400)
-      .expect(res => {
-        expect(res.body).toEqual({});
-      })
+      .expect(res => expect(res.body).toEqual({}))
       .end(done);
+  });
+});
+
+describe('POST /users/login', () => {
+  it('should login users and return auth token', done => {
+    request(app)
+      .post('/users/login')
+      .send({ email: users[1].email, password: users[1].password })
+      .expect(200)
+      .expect(res => expect(res.headers['x-auth']).toExist({}))
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        User.findById(users[1]._id)
+          .then(user => {
+            expect(user.tokens[0]).toInclude({
+              access: 'auth',
+              token: res.headers['x-auth'],
+            });
+            done();
+          })
+          .catch(e => done(e));
+      });
+  });
+
+  it('should reject invalid credentials', done => {
+    request(app)
+      .post('/users/login')
+      .send({ email: users[1].email, password: 'fadsfja;j' })
+      .expect(400)
+      .expect(res => expect(res.headers['x-auth']).toNotExist({}))
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        User.findById(users[1]._id)
+          .then(user => {
+            expect(user.tokens.length).toBe(0);
+            done();
+          })
+          .catch(e => done(e));
+      });
   });
 });
