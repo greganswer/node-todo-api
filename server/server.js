@@ -1,7 +1,6 @@
 require('./config/config');
 
 // Modules
-
 const { ObjectID } = require('mongodb');
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -10,7 +9,6 @@ const app = express();
 app.use(bodyParser.json());
 
 // Local
-
 const PORT = process.env.PORT || 3000;
 const ENV = process.env.NODE_ENV || 'development';
 const { mongoose } = require('./db/mongoose');
@@ -19,7 +17,6 @@ const { Todo } = require('./models/todo');
 const { User } = require('./models/user');
 
 // POST /todos
-
 app.post('/todos', (req, res) => {
   let todo = new Todo({ text: req.body.text });
 
@@ -30,7 +27,6 @@ app.post('/todos', (req, res) => {
 });
 
 // GET /todos
-
 app.get('/todos', (req, res) => {
   Todo.find()
     .then(todos => res.send({ todos }))
@@ -38,7 +34,6 @@ app.get('/todos', (req, res) => {
 });
 
 // GET /todos/:id
-
 app.get('/todos/:id', (req, res) => {
   let id = req.params.id;
 
@@ -57,7 +52,6 @@ app.get('/todos/:id', (req, res) => {
 });
 
 // DELETE /todos/:id
-
 app.delete('/todos/:id', (req, res) => {
   let id = req.params.id;
 
@@ -76,7 +70,6 @@ app.delete('/todos/:id', (req, res) => {
 });
 
 // PATCH /todos/:id
-
 app.patch('/todos/:id', (req, res) => {
   let id = req.params.id;
   let body = _.pick(req.body, ['text', 'completed']);
@@ -103,7 +96,6 @@ app.patch('/todos/:id', (req, res) => {
 });
 
 // POST /users
-
 app.post('/users', (req, res) => {
   let body = _.pick(req.body, ['email', 'password']);
   let user = new User(body);
@@ -116,15 +108,12 @@ app.post('/users', (req, res) => {
 });
 
 // GET /users/me
-
 app.get('/users/me', authenticate, (req, res) => {
   res.send(req.user);
 });
 
 // Final
-
 let message = `Server is running on port ${PORT} in ${ENV}`;
 app.get('*', (req, res) => res.send('404 - Not found'));
 app.listen(PORT, () => console.log(message));
-
 module.exports = { app };
