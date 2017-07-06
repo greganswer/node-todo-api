@@ -1,3 +1,5 @@
+require('./config/config');
+
 // Modules
 
 const { ObjectID } = require('mongodb');
@@ -111,7 +113,10 @@ app.patch('/todos/:id', (req, res) => {
 
 app.get('*', (req, res) => res.send('404 - Not found'));
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(
+    `Server is running on port ${PORT} in ${process.env.NODE_ENV ||
+      'development'}`,
+  );
 });
 
 module.exports = { app };
