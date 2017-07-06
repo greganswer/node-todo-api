@@ -20,17 +20,14 @@ const { User } = require('./models/user');
 app.post('/todos', (req, res) => {
   let todo = new Todo({ text: req.body.text });
 
-  todo
-    .save()
-    .then(todo => res.send(todo))
-    .catch(e => res.status(400).send('Something went wrong'));
+  todo.save().then(todo => res.send(todo)).catch(e => res.status(400).send());
 });
 
 // GET /todos
 app.get('/todos', (req, res) => {
   Todo.find()
     .then(todos => res.send({ todos }))
-    .catch(e => res.status(400).send('Something went wrong'));
+    .catch(e => res.status(400).send());
 });
 
 // GET /todos/:id
@@ -48,7 +45,7 @@ app.get('/todos/:id', (req, res) => {
       }
       res.send({ todo });
     })
-    .catch(e => res.status(400).send('Something went wrong'));
+    .catch(e => res.status(400).send());
 });
 
 // DELETE /todos/:id
@@ -66,7 +63,7 @@ app.delete('/todos/:id', (req, res) => {
       }
       res.send({ todo });
     })
-    .catch(e => res.status(400).send('Something went wrong'));
+    .catch(e => res.status(400).send());
 });
 
 // PATCH /todos/:id
@@ -92,7 +89,7 @@ app.patch('/todos/:id', (req, res) => {
       }
       res.send({ todo });
     })
-    .catch(e => res.status(400).send('Something went wrong'));
+    .catch(e => res.status(400).send());
 });
 
 // POST /users
@@ -104,7 +101,7 @@ app.post('/users', (req, res) => {
     .save()
     .then(() => user.generateAuthToken())
     .then(token => res.header('x-auth', token).send({ user }))
-    .catch(e => res.status(400).send('Something went wrong'));
+    .catch(e => res.status(400).send());
 });
 
 // GET /users/me
