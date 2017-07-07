@@ -22,10 +22,10 @@ bcrypt.genSalt(10, (err, salt) => {
 //   id: 10,
 // };
 //
-// let token = jwt.sign(data, 'abc123');
+// let token = jwt.sign(data, process.env.JWT_SECRET);
 // console.log(token);
 //
-// let decoded = jwt.verify(token, 'abc123');
+// let decoded = jwt.verify(token, process.env.JWT_SECRET);
 // console.log(decoded);
 
 // let message = 'I am user';
