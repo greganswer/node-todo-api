@@ -1,6 +1,8 @@
 require('./config/config');
 
-// Modules
+/*
+ * Modules
+ */
 const { ObjectID } = require('mongodb');
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -9,15 +11,20 @@ const app = express();
 const bcrypt = require('bcryptjs');
 app.use(bodyParser.json());
 
-// Local
+/*
+ * Local
+ */
 const PORT = process.env.PORT || 3000;
 const ENV = process.env.NODE_ENV || 'development';
 const { mongoose } = require('./db/mongoose');
 const { authenticate } = require('./middleware/authenticate');
+const { validateId } = require('./middleware/validateId');
 const { Todo } = require('./models/todo');
 const { User } = require('./models/user');
 
-// POST /todos
+/*
+ * POST /todos
+ */
 app.post('/todos', authenticate, (req, res) => {
   let todo = new Todo({
     _userId: req.user._id,
@@ -27,22 +34,20 @@ app.post('/todos', authenticate, (req, res) => {
   todo.save().then(todo => res.send(todo)).catch(e => res.status(400).send());
 });
 
-// GET /todos
+/*
+ * GET /todos
+ */
 app.get('/todos', authenticate, (req, res) => {
   Todo.find({ _userId: req.user._id })
     .then(todos => res.send({ todos }))
     .catch(e => res.status(400).send());
 });
 
-// GET /todos/:id
-app.get('/todos/:id', authenticate, (req, res) => {
-  let id = req.params.id;
-
-  if (!ObjectID.isValid(id)) {
-    return res.status(404).send('Invalid ID');
-  }
-
-  Todo.findOne({ _id: id, _userId: req.user._id })
+/*
+ * GET /todos/:id
+ */
+app.get('/todos/:id', authenticate, validateId, (req, res) => {
+  Todo.findOne({ _id: req.params.id, _userId: req.user._id })
     .then(todo => {
       if (!todo) {
         return res.status(404).send('Todo not found');
@@ -52,15 +57,11 @@ app.get('/todos/:id', authenticate, (req, res) => {
     .catch(e => res.status(400).send());
 });
 
-// DELETE /todos/:id
-app.delete('/todos/:id', authenticate, (req, res) => {
-  let id = req.params.id;
-
-  if (!ObjectID.isValid(id)) {
-    return res.status(404).send('Invalid ID');
-  }
-
-  Todo.findOneAndRemove({ _id: id, _userId: req.user._id })
+/*
+ * DELETE /todos/:id
+ */
+app.delete('/todos/:id', authenticate, validateId, (req, res) => {
+  Todo.findOneAndRemove({ _id: req.params.id, _userId: req.user._id })
     .then(todo => {
       if (!todo) {
         return res.status(404).send('Todo not found');
@@ -70,14 +71,11 @@ app.delete('/todos/:id', authenticate, (req, res) => {
     .catch(e => res.status(400).send());
 });
 
-// PATCH /todos/:id
-app.patch('/todos/:id', authenticate, (req, res) => {
-  let id = req.params.id;
+/*
+ * PATCH /todos/:id
+ */
+app.patch('/todos/:id', authenticate, validateId, (req, res) => {
   let body = _.pick(req.body, ['text', 'completed']);
-
-  if (!ObjectID.isValid(id)) {
-    return res.status(404).send('Invalid ID');
-  }
 
   if (_.isBoolean(body.completed) && body.completed) {
     body.completedAt = new Date().getTime();
@@ -87,7 +85,7 @@ app.patch('/todos/:id', authenticate, (req, res) => {
   }
 
   Todo.findOneAndUpdate(
-    { _id: id, _userId: req.user._id },
+    { _id: req.params.id, _userId: req.user._id },
     { $set: body },
     { new: true },
   )
@@ -100,7 +98,9 @@ app.patch('/todos/:id', authenticate, (req, res) => {
     .catch(e => res.status(400).send());
 });
 
-// POST /users
+/*
+ * POST /users
+ */
 app.post('/users', (req, res) => {
   let body = _.pick(req.body, ['email', 'password']);
   let user = new User(body);
@@ -112,12 +112,16 @@ app.post('/users', (req, res) => {
     .catch(e => res.status(400).send());
 });
 
-// GET /users/me
+/*
+ * GET /users/me
+ */
 app.get('/users/me', authenticate, (req, res) => {
   res.send(req.user);
 });
 
-// POST /users/login
+/*
+ * POST /users/login
+ */
 app.post('/users/login', (req, res) => {
   let body = _.pick(req.body, ['email', 'password']);
 
@@ -130,7 +134,9 @@ app.post('/users/login', (req, res) => {
     .catch(e => res.status(400).send());
 });
 
-// POST /users/me/token
+/*
+ * POST /users/me/token
+ */
 app.delete('/users/me/token', authenticate, (req, res) => {
   req.user.removeToken(req.token).then(
     () => {
@@ -142,7 +148,9 @@ app.delete('/users/me/token', authenticate, (req, res) => {
   );
 });
 
-// Final
+/*
+ * Final
+ */
 let message = `Server is running on port ${PORT} in ${ENV}`;
 app.get('*', (req, res) => res.send('404 - Not found'));
 app.listen(PORT, () => console.log(message));
