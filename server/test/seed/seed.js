@@ -1,3 +1,6 @@
+/**
+ * Modules
+ */
 const { ObjectID } = require('mongodb');
 const jwt = require('jsonwebtoken');
 
@@ -7,6 +10,9 @@ const { User } = require('./../../models/user');
 const userOneId = new ObjectID();
 const userTwoId = new ObjectID();
 
+/**
+ * Seeds
+ */
 const users = [
   {
     _id: userOneId,
@@ -47,6 +53,9 @@ const todos = [
   },
 ];
 
+/**
+ * Before filter callbacks
+ */
 const populateTodos = done => {
   Todo.remove({}).then(() => Todo.insertMany(todos)).then(() => done());
 };
