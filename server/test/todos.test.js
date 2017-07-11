@@ -13,6 +13,9 @@ const { todos, populateTodos, users, populateUsers } = require('./seed/seed');
 beforeEach(populateUsers);
 beforeEach(populateTodos);
 
+let deniedMessage = "Sorry, you don't have access to this";
+let notFoundMessage = 'Unable to find resource';
+
 /**
  * POST /todos
  */
@@ -25,7 +28,11 @@ describe('POST /todos', () => {
       .set('x-auth', users[0].tokens[0].token)
       .send({ text })
       .expect(200)
-      .expect(res => expect(res.body.text).toBe(text))
+      .expect(res => {
+        expect(res.body.todo.text).toBe(text);
+        expect(res.body.todo.completed).toBe(false);
+        expect(res.body.todo.completedAt).toBe(null);
+      })
       .end((err, res) => {
         if (err) {
           return done(err);
@@ -45,7 +52,14 @@ describe('POST /todos', () => {
       .post('/todos')
       .set('x-auth', users[0].tokens[0].token)
       .send({})
-      .expect(400)
+      .expect(422)
+      .expect(res => {
+        expect(res.body.message).toEqual('Todo validation failed');
+        expect(res.body.errors).toInclude({
+          field: 'text',
+          message: 'text must be present',
+        });
+      })
       .end((err, res) => {
         if (err) {
           return done(err);
@@ -83,7 +97,9 @@ describe('GET /todos/:id', () => {
       .get(`/todos/${todos[0]._id.toHexString()}`)
       .set('x-auth', users[0].tokens[0].token)
       .expect(200)
-      .expect(res => expect(res.body.todo.text).toBe(todos[0].text))
+      .expect(res => {
+        expect(res.body.todo.text).toBe(todos[0].text);
+      })
       .end(done);
   });
 
@@ -91,7 +107,8 @@ describe('GET /todos/:id', () => {
     request(app)
       .get(`/todos/${todos[1]._id.toHexString()}`)
       .set('x-auth', users[0].tokens[0].token)
-      .expect(404)
+      .expect(403)
+      .expect(res => expect(res.body.message).toEqual(deniedMessage))
       .end(done);
   });
 
@@ -100,6 +117,7 @@ describe('GET /todos/:id', () => {
       .get(`/todos/${new ObjectID().toHexString()}`)
       .set('x-auth', users[0].tokens[0].token)
       .expect(404)
+      .expect(res => expect(res.body.message).toEqual(notFoundMessage))
       .end(done);
   });
 
@@ -108,6 +126,7 @@ describe('GET /todos/:id', () => {
       .get('/todos/123')
       .set('x-auth', users[0].tokens[0].token)
       .expect(404)
+      .expect(res => expect(res.body.message).toEqual(notFoundMessage))
       .end(done);
   });
 });
@@ -201,7 +220,8 @@ describe('PATCH /todos/:id', () => {
       .patch(`/todos/${hexId}`)
       .set('x-auth', users[1].tokens[0].token)
       .send({ completed: true, text })
-      .expect(404)
+      .expect(403)
+      .expect(res => expect(res.body.message).toEqual(deniedMessage))
       .end(done);
   });
 
@@ -227,6 +247,7 @@ describe('PATCH /todos/:id', () => {
       .patch(`/todos/${new ObjectID().toHexString()}`)
       .set('x-auth', users[1].tokens[0].token)
       .expect(404)
+      .expect(res => expect(res.body.message).toEqual(notFoundMessage))
       .end(done);
   });
 
@@ -235,6 +256,7 @@ describe('PATCH /todos/:id', () => {
       .patch('/todos/123')
       .set('x-auth', users[1].tokens[0].token)
       .expect(404)
+      .expect(res => expect(res.body.message).toEqual(notFoundMessage))
       .end(done);
   });
 });

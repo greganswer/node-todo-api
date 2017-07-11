@@ -1,13 +1,17 @@
+/**
+ * Modules
+ */
 const mongoose = require('mongoose');
+const _ = require('lodash');
 
-const Todo = mongoose.model('Todo', {
+let TodoSchema = new mongoose.Schema({
   _userId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
   },
   text: {
     type: String,
-    required: true,
+    required: [true, 'text must be present'],
     minlength: 1,
     trim: true,
   },
@@ -20,5 +24,22 @@ const Todo = mongoose.model('Todo', {
     default: null,
   },
 });
+
+/*
+  The JSON representation of the Todo object
+ */
+TodoSchema.methods.toJSON = function() {
+  let todo = this;
+  let todoObject = todo.toObject();
+  return _.pick(todoObject, [
+    '_id',
+    '_userId',
+    'text',
+    'completed',
+    'completedAt',
+  ]);
+};
+
+const Todo = mongoose.model('Todo', TodoSchema);
 
 module.exports = { Todo };

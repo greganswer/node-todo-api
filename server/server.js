@@ -8,6 +8,7 @@ const bodyParser = require('body-parser');
 const _ = require('lodash');
 const app = express();
 const bcrypt = require('bcryptjs');
+const { ObjectID } = require('mongodb');
 app.use(bodyParser.json());
 
 /**
@@ -18,6 +19,7 @@ const ENV = process.env.NODE_ENV || 'development';
 const { mongoose } = require('./db/mongoose');
 const { authenticate } = require('./middleware/authenticate');
 const { validateId } = require('./middleware/validateId');
+const jsonErrorResponse = require('./helpers/jsonErrorResponse');
 const { Todo } = require('./models/todo');
 const { User } = require('./models/user');
 
@@ -29,7 +31,15 @@ app.post('/todos', authenticate, (req, res) => {
     _userId: req.user._id,
     text: req.body.text,
   });
-  todo.save().then(todo => res.send(todo)).catch(e => res.status(400).send());
+  todo.save().then(todo => res.send({ todo })).catch(e => {
+    let errors = _.mapValues(e.errors, error => {
+      return { field: error.path, message: error.message };
+    });
+    return res.status(422).send({
+      message: e.message,
+      errors: _.values(errors),
+    });
+  });
 });
 
 /**
@@ -45,14 +55,19 @@ app.get('/todos', authenticate, (req, res) => {
  * GET /todos/:id
  */
 app.get('/todos/:id', authenticate, validateId, (req, res) => {
-  Todo.findOne({ _id: req.params.id, _userId: req.user._id })
+  Todo.findOne({ _id: req.params.id })
     .then(todo => {
       if (!todo) {
-        return res.status(404).send('Todo not found');
+        return res.status(404).send({ message: 'Unable to find resource' });
+      }
+      if (!todo._userId.equals(req.user._id)) {
+        return res
+          .status(403)
+          .send({ message: "Sorry, you don't have access to this" });
       }
       res.send({ todo });
     })
-    .catch(e => res.status(400).send());
+    .catch(e => res.status(404).send({ message: 'Unable to find resource' }));
 });
 
 /**
@@ -62,7 +77,9 @@ app.delete('/todos/:id', authenticate, validateId, (req, res) => {
   Todo.findOneAndRemove({ _id: req.params.id, _userId: req.user._id })
     .then(todo => {
       if (!todo) {
-        return res.status(404).send('Todo not found');
+        return res.status(404).send({
+          message: 'Unable to find resource',
+        });
       }
       res.send({ todo });
     })
@@ -82,18 +99,25 @@ app.patch('/todos/:id', authenticate, validateId, (req, res) => {
     body.completedAt = null;
   }
 
-  Todo.findOneAndUpdate(
-    { _id: req.params.id, _userId: req.user._id },
-    { $set: body },
-    { new: true },
-  )
+  Todo.findOneAndUpdate({ _id: req.params.id }, { $set: body }, { new: true })
     .then(todo => {
       if (!todo) {
-        return res.status(404).send('Todo not found');
+        return res.status(404).send({
+          message: 'Unable to find resource',
+        });
+      }
+      if (!todo._userId.equals(req.user._id)) {
+        return res
+          .status(403)
+          .send({ message: "Sorry, you don't have access to this" });
       }
       res.send({ todo });
     })
-    .catch(e => res.status(400).send());
+    .catch(e =>
+      res.status(400).send({
+        message: 'Unable to find resource',
+      }),
+    );
 });
 
 /**
@@ -111,7 +135,7 @@ app.post('/users', (req, res) => {
       let errors = _.mapValues(e.errors, error => {
         return { field: error.path, message: error.message };
       });
-      res.status(422).send({
+      return res.status(422).send({
         message: e.message,
         errors: _.values(errors),
       });

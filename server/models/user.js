@@ -42,7 +42,9 @@ let UserSchema = new mongoose.Schema({
   ],
 });
 
-UserSchema.plugin(uniqueValidator);
+UserSchema.plugin(uniqueValidator, {
+  message: '"{VALUE}" has already been taken',
+});
 
 /*
   The JSON representation of the User object
