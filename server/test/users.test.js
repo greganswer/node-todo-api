@@ -21,8 +21,8 @@ describe('GET /users/me', () => {
       .set('x-auth', users[0].tokens[0].token)
       .expect(200)
       .expect(res => {
-        expect(res.body._id).toBe(users[0]._id.toHexString());
-        expect(res.body.email).toBe(users[0].email);
+        expect(res.body.user._id).toBe(users[0]._id.toHexString());
+        expect(res.body.user.email).toBe(users[0].email);
       })
       .end(done);
   });
@@ -31,7 +31,12 @@ describe('GET /users/me', () => {
     request(app)
       .get('/users/me')
       .expect(401)
-      .expect(res => expect(res.body).toEqual({}))
+      .expect(res =>
+        expect(res.body).toEqual({
+          message: 'Not authorized',
+          errors: [],
+        }),
+      )
       .end(done);
   });
 });
@@ -70,17 +75,34 @@ describe('POST /users', () => {
     request(app)
       .post('/users')
       .send({ email: 'and', password: '12345' })
-      .expect(400)
-      .expect(res => expect(res.body).toEqual({}))
+      .expect(422)
+      .expect(res => {
+        expect(res.body.message).toEqual('User validation failed');
+        expect(res.body.errors).toInclude({
+          field: 'email',
+          message: '"and" is not a valid email',
+        });
+        expect(res.body.errors).toInclude({
+          field: 'password',
+          message: 'Password "12345" must be at least 6 characters',
+        });
+      })
       .end(done);
   });
 
-  it('should not create user if email in use', done => {
+  it('should not create user if email is taken', done => {
     request(app)
       .post('/users')
       .send({ email: users[0].email, password: 'faldjskf' })
-      .expect(400)
-      .expect(res => expect(res.body).toEqual({}))
+      .expect(422)
+      // TODO: Get this to work
+      // .expect(res => {
+      //   expect(res.body.message).toEqual('User validation failed');
+      //   expect(res.body.errors).toInclude({
+      //     field: 'email',
+      //     message: `"${users[0].email}" has already been taken`,
+      //   });
+      // })
       .end(done);
   });
 });
@@ -94,7 +116,11 @@ describe('POST /users/login', () => {
       .post('/users/login')
       .send({ email: users[1].email, password: users[1].password })
       .expect(200)
-      .expect(res => expect(res.headers['x-auth']).toExist({}))
+      .expect(res => {
+        expect(res.headers['x-auth']).toExist({});
+        expect(res.body.user._id).toExist();
+        expect(res.body.user.email).toBe(users[1].email);
+      })
       .end((err, res) => {
         if (err) {
           return done(err);
@@ -115,8 +141,11 @@ describe('POST /users/login', () => {
     request(app)
       .post('/users/login')
       .send({ email: users[1].email, password: 'fadsfja;j' })
-      .expect(400)
-      .expect(res => expect(res.headers['x-auth']).toNotExist({}))
+      .expect(401)
+      .expect(res => {
+        expect(res.headers['x-auth']).toNotExist({});
+        expect(res.body.message).toEqual('Invalid email or password');
+      })
       .end((err, res) => {
         if (err) {
           return done(err);

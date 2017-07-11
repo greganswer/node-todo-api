@@ -1,9 +1,16 @@
+/**
+ * Modules
+ */
 const mongoose = require('mongoose');
 const validator = require('validator');
+var uniqueValidator = require('mongoose-unique-validator');
 const jwt = require('jsonwebtoken');
 const _ = require('lodash');
 const bcrypt = require('bcryptjs');
 
+/**
+ * UserSchema
+ */
 let UserSchema = new mongoose.Schema({
   email: {
     type: String,
@@ -13,13 +20,13 @@ let UserSchema = new mongoose.Schema({
     unique: true,
     validate: {
       validator: validator.isEmail,
-      message: '{VALUE} is not a valid email',
+      message: '"{VALUE}" is not a valid email',
     },
   },
   password: {
     type: String,
     required: true,
-    minlength: 6,
+    minlength: [6, 'Password "{VALUE}" must be at least 6 characters'],
   },
   tokens: [
     {
@@ -34,6 +41,8 @@ let UserSchema = new mongoose.Schema({
     },
   ],
 });
+
+UserSchema.plugin(uniqueValidator);
 
 /*
   The JSON representation of the User object

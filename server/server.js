@@ -3,7 +3,6 @@ require('./config/config');
 /**
  * Modules
  */
-const { ObjectID } = require('mongodb');
 const express = require('express');
 const bodyParser = require('body-parser');
 const _ = require('lodash');
@@ -108,14 +107,22 @@ app.post('/users', (req, res) => {
     .save()
     .then(() => user.generateAuthToken())
     .then(token => res.header('x-auth', token).send({ user }))
-    .catch(e => res.status(400).send());
+    .catch(e => {
+      let errors = _.mapValues(e.errors, error => {
+        return { field: error.path, message: error.message };
+      });
+      res.status(422).send({
+        message: e.message,
+        errors: _.values(errors),
+      });
+    });
 });
 
 /**
  * GET /users/me
  */
 app.get('/users/me', authenticate, (req, res) => {
-  res.send(req.user);
+  res.send({ user: req.user });
 });
 
 /**
@@ -130,7 +137,12 @@ app.post('/users/login', (req, res) => {
         res.header('x-auth', token).send({ user });
       });
     })
-    .catch(e => res.status(400).send());
+    .catch(e =>
+      res.status(401).send({
+        message: 'Invalid email or password',
+        errors: [],
+      }),
+    );
 });
 
 /**
