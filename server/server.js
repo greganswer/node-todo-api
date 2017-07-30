@@ -73,17 +73,20 @@ app.get('/todos/:id', authenticate, validateId, (req, res) => {
 /**
  * DELETE /todos/:id
  */
-app.delete('/todos/:id', authenticate, validateId, (req, res) => {
-  Todo.findOneAndRemove({ _id: req.params.id, _userId: req.user._id })
-    .then(todo => {
-      if (!todo) {
-        return res.status(404).send({
-          message: 'Unable to find resource',
-        });
-      }
-      res.send({ todo });
-    })
-    .catch(e => res.status(400).send());
+app.delete('/todos/:id', authenticate, validateId, async (req, res) => {
+  try {
+    const todo = await Todo.findOneAndRemove({
+      _id: req.params.id,
+      _userId: req.user._id,
+    });
+
+    if (!todo) {
+      return res.status(404).send({ message: 'Unable to find resource' });
+    }
+    res.send({ todo });
+  } catch (e) {
+    res.status(400).send();
+  }
 });
 
 /**
@@ -123,23 +126,19 @@ app.patch('/todos/:id', authenticate, validateId, (req, res) => {
 /**
  * POST /users
  */
-app.post('/users', (req, res) => {
-  let body = _.pick(req.body, ['email', 'password']);
-  let user = new User(body);
-
-  user
-    .save()
-    .then(() => user.generateAuthToken())
-    .then(token => res.header('x-auth', token).send({ user }))
-    .catch(e => {
-      let errors = _.mapValues(e.errors, error => {
-        return { field: error.path, message: error.message };
-      });
-      return res.status(422).send({
-        message: e.message,
-        errors: _.values(errors),
-      });
+app.post('/users', async (req, res) => {
+  try {
+    const body = _.pick(req.body, ['email', 'password']);
+    const user = new User(body);
+    await user.save();
+    const token = await user.generateAuthToken();
+    res.header('x-auth', token).send({ user });
+  } catch (e) {
+    let errors = _.mapValues(e.errors, error => {
+      return { field: error.path, message: error.message };
     });
+    res.status(422).send({ message: e.message, errors: _.values(errors) });
+  }
 });
 
 /**
@@ -152,35 +151,27 @@ app.get('/users/me', authenticate, (req, res) => {
 /**
  * POST /users/login
  */
-app.post('/users/login', (req, res) => {
-  let body = _.pick(req.body, ['email', 'password']);
-
-  User.findByCredentials(body.email, body.password)
-    .then(user => {
-      return user.generateAuthToken().then(token => {
-        res.header('x-auth', token).send({ user });
-      });
-    })
-    .catch(e =>
-      res.status(401).send({
-        message: 'Invalid email or password',
-        errors: [],
-      }),
-    );
+app.post('/users/login', async (req, res) => {
+  try {
+    const body = _.pick(req.body, ['email', 'password']);
+    const user = await User.findByCredentials(body.email, body.password);
+    const token = await user.generateAuthToken();
+    res.header('x-auth', token).send({ user });
+  } catch (e) {
+    res.status(401).send({ message: 'Invalid email or password', errors: [] });
+  }
 });
 
 /**
  * POST /users/me/token
  */
-app.delete('/users/me/token', authenticate, (req, res) => {
-  req.user.removeToken(req.token).then(
-    () => {
-      res.status(200).send();
-    },
-    () => {
-      res.status(400).send();
-    },
-  );
+app.delete('/users/me/token', authenticate, async (req, res) => {
+  try {
+    await req.user.removeToken(req.token);
+    res.status(200).send();
+  } catch (e) {
+    res.status(400).send();
+  }
 });
 
 /**
