@@ -61,9 +61,7 @@ app.get('/todos/:id', authenticate, validateId, (req, res) => {
         return res.status(404).send({ message: 'Unable to find resource' });
       }
       if (!todo._userId.equals(req.user._id)) {
-        return res
-          .status(403)
-          .send({ message: "Sorry, you don't have access to this" });
+        return res.status(403).send({ message: "Sorry, you don't have access to this" });
       }
       res.send({ todo });
     })
@@ -105,22 +103,14 @@ app.patch('/todos/:id', authenticate, validateId, (req, res) => {
   Todo.findOneAndUpdate({ _id: req.params.id }, { $set: body }, { new: true })
     .then(todo => {
       if (!todo) {
-        return res.status(404).send({
-          message: 'Unable to find resource',
-        });
+        return res.status(404).send({ message: 'Unable to find resource' });
       }
       if (!todo._userId.equals(req.user._id)) {
-        return res
-          .status(403)
-          .send({ message: "Sorry, you don't have access to this" });
+        return res.status(403).send({ message: "Sorry, you don't have access to this" });
       }
       res.send({ todo });
     })
-    .catch(e =>
-      res.status(400).send({
-        message: 'Unable to find resource',
-      }),
-    );
+    .catch(e => res.status(400).send({ message: 'Unable to find resource' }));
 });
 
 /**
