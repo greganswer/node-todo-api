@@ -1,10 +1,11 @@
-let env = process.env.NODE_ENV || 'development';
+const env = process.env.NODE_ENV || 'development';
 
 if (env === 'development' || env === 'test') {
-  let config = require('./config.json');
-  let envConfig = config[env];
+  // The file below is NOT required in production
+  const config = require('./config.json');
+  const envConfig = config[env];
 
-  Object.keys(envConfig).forEach(key => {
+  Object.keys(envConfig).forEach((key) => {
     process.env[key] = envConfig[key];
   });
 }

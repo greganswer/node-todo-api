@@ -2,9 +2,7 @@ const _ = require('lodash');
 
 module.exports.jsonErrorResponse = {
   validation(res, e) {
-    let errors = _.mapValues(e.errors, error => {
-      return { field: error.path, message: error.message };
-    });
+    const errors = _.mapValues(e.errors, error => ({ field: error.path, message: error.message }));
     return res.status(422).send({
       message: e.message,
       errors: _.values(errors),
