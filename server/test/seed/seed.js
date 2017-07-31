@@ -21,9 +21,7 @@ const users = [
     tokens: [
       {
         access: 'auth',
-        token: jwt
-          .sign({ _id: userOneId, access: 'auth' }, process.env.JWT_SECRET)
-          .toString(),
+        token: jwt.sign({ _id: userOneId, access: 'auth' }, process.env.JWT_SECRET).toString(),
       },
     ],
   },
@@ -34,9 +32,7 @@ const users = [
     tokens: [
       {
         access: 'auth',
-        token: jwt
-          .sign({ _id: userTwoId, access: 'auth' }, process.env.JWT_SECRET)
-          .toString(),
+        token: jwt.sign({ _id: userTwoId, access: 'auth' }, process.env.JWT_SECRET).toString(),
       },
     ],
   },
@@ -56,15 +52,15 @@ const todos = [
 /**
  * Before filter callbacks
  */
-const populateTodos = done => {
+const populateTodos = (done) => {
   Todo.remove({}).then(() => Todo.insertMany(todos)).then(() => done());
 };
 
-const populateUsers = done => {
+const populateUsers = (done) => {
   User.remove({})
     .then(() => {
-      let userOne = new User(users[0]).save();
-      let userTwo = new User(users[1]).save();
+      const userOne = new User(users[0]).save();
+      const userTwo = new User(users[1]).save();
 
       return Promise.all([userOne, userTwo]);
     })

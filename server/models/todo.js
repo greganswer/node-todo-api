@@ -4,7 +4,7 @@
 const mongoose = require('mongoose');
 const _ = require('lodash');
 
-let TodoSchema = new mongoose.Schema({
+const TodoSchema = new mongoose.Schema({
   _userId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
@@ -28,16 +28,10 @@ let TodoSchema = new mongoose.Schema({
 /*
   The JSON representation of the Todo object
  */
-TodoSchema.methods.toJSON = function() {
-  let todo = this;
-  let todoObject = todo.toObject();
-  return _.pick(todoObject, [
-    '_id',
-    '_userId',
-    'text',
-    'completed',
-    'completedAt',
-  ]);
+TodoSchema.methods.toJSON = function () {
+  const todo = this;
+  const todoObject = todo.toObject();
+  return _.pick(todoObject, ['_id', '_userId', 'text', 'completed', 'completedAt']);
 };
 
 const Todo = mongoose.model('Todo', TodoSchema);

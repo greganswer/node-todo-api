@@ -3,7 +3,7 @@
  */
 const mongoose = require('mongoose');
 const validator = require('validator');
-var uniqueValidator = require('mongoose-unique-validator');
+const uniqueValidator = require('mongoose-unique-validator');
 const jwt = require('jsonwebtoken');
 const _ = require('lodash');
 const bcrypt = require('bcryptjs');
@@ -11,7 +11,7 @@ const bcrypt = require('bcryptjs');
 /**
  * UserSchema
  */
-let UserSchema = new mongoose.Schema({
+const UserSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
@@ -49,21 +49,20 @@ UserSchema.plugin(uniqueValidator, {
 /*
   The JSON representation of the User object
  */
-UserSchema.methods.toJSON = function() {
-  let user = this;
-  let userObject = user.toObject();
+UserSchema.methods.toJSON = function () {
+  const user = this;
+  const userObject = user.toObject();
   return _.pick(userObject, ['_id', 'email']);
 };
 
 /*
   Create an authenticity token for the user
  */
-UserSchema.methods.generateAuthToken = function() {
-  let user = this;
-  let access = 'auth';
-  let token = jwt
-    .sign({ _id: user._id.toHexString(), access }, process.env.JWT_SECRET)
-    .toString();
+UserSchema.methods.generateAuthToken = function () {
+  const user = this;
+  const access = 'auth';
+  const input = { _id: user._id.toHexString(), access };
+  const token = jwt.sign(input, process.env.JWT_SECRET).toString();
   user.tokens.push({ access, token });
 
   return user.save().then(() => token);
@@ -72,16 +71,16 @@ UserSchema.methods.generateAuthToken = function() {
 /*
   Remove the token for the user
  */
-UserSchema.methods.removeToken = function(token) {
-  let user = this;
+UserSchema.methods.removeToken = function (token) {
+  const user = this;
   return user.update({ $pull: { tokens: { token } } });
 };
 
 /*
   Find a user by the auth token
  */
-UserSchema.statics.findByToken = function(token) {
-  let User = this;
+UserSchema.statics.findByToken = function (token) {
+  const User = this;
   let decoded;
 
   try {
@@ -100,13 +99,14 @@ UserSchema.statics.findByToken = function(token) {
 /*
   Find a user by the auth token
  */
-UserSchema.statics.findByCredentials = function(email, password) {
-  let User = this;
+UserSchema.statics.findByCredentials = function (email, password) {
+  const User = this;
 
-  return User.findOne({ email }).then(user => {
+  return User.findOne({ email }).then((user) => {
     if (!user) {
       Promise.reject();
     }
+
     return new Promise((resolve, reject) => {
       bcrypt.compare(password, user.password, (err, res) => {
         if (res) {
@@ -122,8 +122,8 @@ UserSchema.statics.findByCredentials = function(email, password) {
 /*
   Before you save the user, run the following:
  */
-UserSchema.pre('save', function(next) {
-  var user = this;
+UserSchema.pre('save', function (next) {
+  const user = this;
 
   if (user.isModified('password')) {
     bcrypt.genSalt(10, (err, salt) => {

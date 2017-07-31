@@ -1,22 +1,18 @@
 const { User } = require('./../models/user');
 
-module.exports.authenticate = (req, res, next) => {
-  let token = req.header('x-auth');
+module.exports.authenticate = async (req, res, next) => {
+  try {
+    const token = req.header('x-auth');
+    const user = await User.findByToken(token);
 
-  User.findByToken(token)
-    .then(user => {
-      if (!user) {
-        return Promise.reject();
-      }
+    if (!user) {
+      throw new Error();
+    }
 
-      req.user = user;
-      req.token = token;
-      next();
-    })
-    .catch(e =>
-      res.status(401).send({
-        message: 'Not authorized',
-        errors: [],
-      }),
-    );
+    req.user = user;
+    req.token = token;
+    next();
+  } catch (e) {
+    res.status(401).send({ message: 'Not authorized', errors: [] });
+  }
 };
