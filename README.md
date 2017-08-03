@@ -1,4 +1,5 @@
-# Node Todo API
+ Node Todo API
+==================
 
 > A Todo list API using NodeJS based on [this Udemy NodeJS course](https://www.udemy.com/the-complete-nodejs-developer-course-2/)
 
