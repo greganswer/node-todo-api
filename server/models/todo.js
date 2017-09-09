@@ -28,9 +28,10 @@ const TodoSchema = new mongoose.Schema({
 /*
   The JSON representation of the Todo object
  */
-TodoSchema.methods.toJSON = function () {
+TodoSchema.methods.toJSON = function toJSON() {
   const todo = this;
   const todoObject = todo.toObject();
+
   return _.pick(todoObject, ['_id', '_userId', 'text', 'completed', 'completedAt']);
 };
 

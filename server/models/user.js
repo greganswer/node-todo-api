@@ -49,16 +49,17 @@ UserSchema.plugin(uniqueValidator, {
 /*
   The JSON representation of the User object
  */
-UserSchema.methods.toJSON = function () {
+UserSchema.methods.toJSON = function toJSON() {
   const user = this;
   const userObject = user.toObject();
+
   return _.pick(userObject, ['_id', 'email']);
 };
 
 /*
   Create an authenticity token for the user
  */
-UserSchema.methods.generateAuthToken = function () {
+UserSchema.methods.generateAuthToken = function generateAuthToken() {
   const user = this;
   const access = 'auth';
   const input = { _id: user._id.toHexString(), access };
@@ -71,15 +72,16 @@ UserSchema.methods.generateAuthToken = function () {
 /*
   Remove the token for the user
  */
-UserSchema.methods.removeToken = function (token) {
+UserSchema.methods.removeToken = function removeToken(token) {
   const user = this;
+
   return user.update({ $pull: { tokens: { token } } });
 };
 
 /*
   Find a user by the auth token
  */
-UserSchema.statics.findByToken = function (token) {
+UserSchema.statics.findByToken = function findByToken(token) {
   const User = this;
   let decoded;
 
@@ -99,7 +101,7 @@ UserSchema.statics.findByToken = function (token) {
 /*
   Find a user by the auth token
  */
-UserSchema.statics.findByCredentials = function (email, password) {
+UserSchema.statics.findByCredentials = function findByCredentials(email, password) {
   const User = this;
 
   return User.findOne({ email }).then((user) => {
@@ -108,13 +110,7 @@ UserSchema.statics.findByCredentials = function (email, password) {
     }
 
     return new Promise((resolve, reject) => {
-      bcrypt.compare(password, user.password, (err, res) => {
-        if (res) {
-          resolve(user);
-        } else {
-          reject();
-        }
-      });
+      bcrypt.compare(password, user.password, (err, res) => (res ? resolve(user) : reject()));
     });
   });
 };
@@ -122,11 +118,11 @@ UserSchema.statics.findByCredentials = function (email, password) {
 /*
   Before you save the user, run the following:
  */
-UserSchema.pre('save', function (next) {
+UserSchema.pre('save', function pre(next) {
   const user = this;
 
   if (user.isModified('password')) {
-    bcrypt.genSalt(10, (err, salt) => {
+    bcrypt.genSalt(10, (error, salt) => {
       bcrypt.hash(user.password, salt, (err, hash) => {
         user.password = hash;
         next();

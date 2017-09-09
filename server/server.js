@@ -6,9 +6,9 @@ require('./config/config');
 const express = require('express');
 const bodyParser = require('body-parser');
 const _ = require('lodash');
+
 const app = express();
-const bcrypt = require('bcryptjs');
-const { ObjectID } = require('mongodb');
+
 app.use(bodyParser.json());
 
 /**
@@ -16,10 +16,8 @@ app.use(bodyParser.json());
  */
 const PORT = process.env.PORT || 3000;
 const ENV = process.env.NODE_ENV || 'development';
-const { mongoose } = require('./db/mongoose');
 const { authenticate } = require('./middleware/authenticate');
 const { validateId } = require('./middleware/validateId');
-const jsonErrorResponse = require('./helpers/jsonErrorResponse');
 const { Todo } = require('./models/todo');
 const { User } = require('./models/user');
 
@@ -27,14 +25,13 @@ const { User } = require('./models/user');
  * POST /todos
  */
 app.post('/todos', authenticate, (req, res) => {
-  let todo = new Todo({
+  const todo = new Todo({
     _userId: req.user._id,
     text: req.body.text,
   });
-  todo.save().then(todo => res.send({ todo })).catch(e => {
-    let errors = _.mapValues(e.errors, error => {
-      return { field: error.path, message: error.message };
-    });
+  todo.save().then(todo => res.send({ todo })).catch((e) => {
+    const errors = _.mapValues(e.errors, error => ({ field: error.path, message: error.message }));
+
     return res.status(422).send({
       message: e.message,
       errors: _.values(errors),
@@ -56,13 +53,13 @@ app.get('/todos', authenticate, (req, res) => {
  */
 app.get('/todos/:id', authenticate, validateId, (req, res) => {
   Todo.findOne({ _id: req.params.id })
-    .then(todo => {
+    .then((todo) => {
       if (!todo) {
         return res.status(404).send({ message: 'Unable to find resource' });
-      }
-      if (!todo._userId.equals(req.user._id)) {
+      } else if (!todo._userId.equals(req.user._id)) {
         return res.status(403).send({ message: "Sorry, you don't have access to this" });
       }
+
       res.send({ todo });
     })
     .catch(e => res.status(404).send({ message: 'Unable to find resource' }));
@@ -81,6 +78,7 @@ app.delete('/todos/:id', authenticate, validateId, async (req, res) => {
     if (!todo) {
       return res.status(404).send({ message: 'Unable to find resource' });
     }
+
     res.send({ todo });
   } catch (e) {
     res.status(400).send();
@@ -91,7 +89,7 @@ app.delete('/todos/:id', authenticate, validateId, async (req, res) => {
  * PATCH /todos/:id
  */
 app.patch('/todos/:id', authenticate, validateId, (req, res) => {
-  let body = _.pick(req.body, ['text', 'completed']);
+  const body = _.pick(req.body, ['text', 'completed']);
 
   if (_.isBoolean(body.completed) && body.completed) {
     body.completedAt = new Date().getTime();
@@ -101,13 +99,13 @@ app.patch('/todos/:id', authenticate, validateId, (req, res) => {
   }
 
   Todo.findOneAndUpdate({ _id: req.params.id }, { $set: body }, { new: true })
-    .then(todo => {
+    .then((todo) => {
       if (!todo) {
         return res.status(404).send({ message: 'Unable to find resource' });
-      }
-      if (!todo._userId.equals(req.user._id)) {
+      } else if (!todo._userId.equals(req.user._id)) {
         return res.status(403).send({ message: "Sorry, you don't have access to this" });
       }
+
       res.send({ todo });
     })
     .catch(e => res.status(400).send({ message: 'Unable to find resource' }));
@@ -124,9 +122,7 @@ app.post('/users', async (req, res) => {
     const token = await user.generateAuthToken();
     res.header('x-auth', token).send({ user });
   } catch (e) {
-    let errors = _.mapValues(e.errors, error => {
-      return { field: error.path, message: error.message };
-    });
+    const errors = _.mapValues(e.errors, error => ({ field: error.path, message: error.message }));
     res.status(422).send({ message: e.message, errors: _.values(errors) });
   }
 });
@@ -167,7 +163,7 @@ app.delete('/users/me/token', authenticate, async (req, res) => {
 /**
  * Final
  */
-let message = `Server is running on port ${PORT} in ${ENV}`;
+const message = `Server is running on port ${PORT} in ${ENV}`;
 app.get('*', (req, res) => res.send('404 - Not found'));
 app.listen(PORT, () => console.log(message));
 module.exports = { app };
